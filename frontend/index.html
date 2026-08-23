@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CXRMate-2 AI Inference</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>CXRMate-2</h2>
+                <div class="health-status" id="health-status">
+                    <span class="status-indicator"></span>
+                    <span class="status-text">Checking model...</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-btn active" data-view="home">Single Inference</button>
+                <button class="nav-btn" data-view="batch">Batch Inference</button>
+                <button class="nav-btn" data-view="history">History</button>
+            </nav>
+            <div class="sidebar-footer">
+                <p>AEHRC/CXRMate-2</p>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Disclaimer Banner -->
+            <div class="disclaimer-banner">
+                <strong>WARNING:</strong> Research/educational use only. This AI-generated report is not a medical diagnosis and must be reviewed by a qualified radiologist or clinician.
+            </div>
+
+            <!-- Home View (Single Inference) -->
+            <section id="view-home" class="view active">
+                <div class="header">
+                    <h1>Chest X-Ray Analysis</h1>
+                    <p>Upload a chest X-ray image (JPG, PNG) to generate findings and impressions using CXRMate-2.</p>
+                </div>
+
+                <div class="upload-container" id="upload-zone">
+                    <div class="upload-prompt" id="upload-prompt">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        <p>Drag and drop an X-ray image here</p>
+                        <p class="sub-text">or click to browse</p>
+                        <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.bmp,.tif,.tiff,.webp" hidden>
+                    </div>
+                    <div class="upload-preview hidden" id="upload-preview">
+                        <img id="preview-img" src="" alt="X-ray preview">
+                        <div class="preview-actions">
+                            <span id="preview-filename">filename.jpg</span>
+                            <button class="btn btn-secondary" id="btn-remove">Remove</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-primary" id="btn-analyze" disabled>Generate Report</button>
+                </div>
+
+                <div class="loading-state hidden" id="loading-state">
+                    <div class="spinner"></div>
+                    <h3>Analyzing X-Ray...</h3>
+                    <p>This process runs on the CPU and takes approximately 1 minute.</p>
+                    <p>Please do not close this tab.</p>
+                </div>
+
+                <div class="results-container hidden" id="results-container">
+                    <div class="results-header">
+                        <h2>Analysis Complete</h2>
+                        <div class="results-meta">
+                            <span class="badge" id="res-time">60s</span>
+                            <span class="badge" id="res-device">CPU</span>
+                        </div>
+                    </div>
+                    
+                    <div class="report-section">
+                        <h3>Findings</h3>
+                        <div class="report-box" id="res-findings"></div>
+                    </div>
+
+                    <div class="report-section">
+                        <h3>Impression</h3>
+                        <div class="report-box" id="res-impression"></div>
+                    </div>
+
+                    <div class="results-actions">
+                        <button class="btn btn-outline" id="btn-new">Analyze Another</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Batch View -->
+            <section id="view-batch" class="view hidden">
+                <div class="header">
+                    <h1>Batch Inference</h1>
+                    <p>Upload multiple X-rays for sequential processing.</p>
+                </div>
+
+                <div class="upload-container" id="batch-upload-zone">
+                    <div class="upload-prompt">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        <p>Select multiple images</p>
+                        <input type="file" id="batch-file-input" accept=".jpg,.jpeg,.png" multiple hidden>
+                        <button class="btn btn-secondary mt-1" onclick="document.getElementById('batch-file-input').click()">Browse Files</button>
+                    </div>
+                </div>
+
+                <div class="batch-list" id="batch-list"></div>
+
+                <div class="actions mt-2">
+                    <button class="btn btn-primary" id="btn-batch-analyze" disabled>Process Batch</button>
+                </div>
+
+                <div class="loading-state hidden" id="batch-loading-state">
+                    <div class="spinner"></div>
+                    <h3 id="batch-progress-text">Processing 1 of X...</h3>
+                    <p>Sequential CPU inference takes ~1 minute per image.</p>
+                </div>
+                
+                <div class="batch-results hidden" id="batch-results">
+                    <h2>Batch Results</h2>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>Status</th>
+                                <th>Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="batch-results-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- History View -->
+            <section id="view-history" class="view hidden">
+                <div class="header">
+                    <h1>Inference History</h1>
+                    <p>Previous reports generated on this machine.</p>
+                </div>
+                <div class="history-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Date</th>
+                                <th>Image</th>
+                                <th>Time (s)</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body">
+                            <tr><td colspan="6" style="text-align: center;">Loading history...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- Modal for viewing history item -->
+    <div class="modal" id="history-modal">
+        <div class="modal-content">
+            <span class="close-btn" id="modal-close">&times;</span>
+            <h2>Report View</h2>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -303,7 +303,7 @@ class CXRMate2ForConditionalGeneration(CXRMate2PreTrainedModel, GenerationMixin)
             
             # Time deltas:
             model_inputs['time_deltas'] = torch.zeros_like(
-                model_inputs['token_type_ids'], dtype=torch.float, device=model_inputs['token_type_ids'].device
+                model_inputs['token_type_ids'], dtype=self.time_delta_encoder.up_proj.weight.dtype, device=model_inputs['token_type_ids'].device
             )  # These will be masked; no need to set this to inf_time_delta_value.
             model_inputs['time_deltas_mask'] = torch.zeros_like(model_inputs['token_type_ids'], dtype=torch.float, device=model_inputs['token_type_ids'].device)
             
